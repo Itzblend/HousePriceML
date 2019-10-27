@@ -34,9 +34,10 @@ varnotselected
 ```
 Following the usual steps in machine learning: setting the parameters for training, training itself and predicting the test set using the trained model (lassoMod)
 
+
 Predictions
 ```{r}
 lassoPred <- predict(lassoMod, test1)
-predictions_test1 <- exp(lassoPred)
+predictions_test1 <- exp(lassoPred) # Exp value as original values has been transferred into log values in separate rmd file
 head(predictions_test1)
 ```
