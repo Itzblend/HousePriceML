@@ -1,0 +1,38 @@
+---
+title: "lasso_optimizer"
+author: "Itzblend"
+date: "27/10/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+set.seed(205)
+
+myControl <- trainControl(method = "cv", number = 10)
+lassoGrid <- expand.grid(alpha = 1, lambda = seq(0.001, 0.1, by = 0.0005))
+
+lassoMod <- train(x = train1, y = all$SalePrice[!is.na(all$SalePrice)], method = "glmnet", trControl = myControl, tuneGrid = lassoGrid)
+
+min(lassoMod$results$RMSE)
+```
+Importances
+```{r}
+lassoVarImp <- varImp(lassoMod, scale = F)
+lassoImportance <- lassoVarImp$importance
+
+varselected <- length(which(lassoImportance$Overall != 0))
+varnotselected <- length(which(lassoImportance$Overall == 0))
+
+varselected
+varnotselected
+```
+Predictions
+```{r}
+lassoPred <- predict(lassoMod, test1)
+predictions_test1 <- exp(lassoPred)
+head(predictions_test1)
+```
