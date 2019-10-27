@@ -17,7 +17,9 @@ lassoGrid <- expand.grid(alpha = 1, lambda = seq(0.001, 0.1, by = 0.0005))
 
 lassoMod <- train(x = train1, y = all$SalePrice[!is.na(all$SalePrice)], method = "glmnet", trControl = myControl, tuneGrid = lassoGrid)
 
-min(lassoMod$results$RMSE)
+rmsePrint <- min(lassoMod$results$RMSE)
+
+cat("The accuracy of the predictor is", rmsePrint)
 ```
 Importances
 ```{r}

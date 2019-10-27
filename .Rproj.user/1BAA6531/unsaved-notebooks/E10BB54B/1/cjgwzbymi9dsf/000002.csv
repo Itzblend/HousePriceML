@@ -1,5 +1,6 @@
-"0","head(predictions_test1)
-"
+"0","lassoPred <- predict(lassoMod, test1)"
+"0","predictions_test1 <- exp(lassoPred)"
+"0","head(predictions_test1)"
 "1","    1461 "
 "1","    1462 "
 "1","    1463 "
