@@ -8,6 +8,25 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+Loading the needed libraries
+```{r}
+library(knitr)
+library(ggplot2)
+library(plyr)
+library(dplyr)
+library(corrplot)
+library(caret)
+library(gridExtra)
+library(scales)
+library(Rmisc)
+library(ggrepel)
+library(randomForest)
+library(psych)
+library(xgboost)
+library(data.table)
+library(tidyverse)
+```
+
 Setting up the control parameters for the train() function.
 ```{r}
 set.seed(205)
