@@ -3,7 +3,7 @@ title: "R Notebook"
 output: html_notebook
 ---
 
-### In this notebook we are going to predict some house prices while learning machine learning /n techniques
+### In this notebook we are going to predict some house prices
 
 Packages and reading files
 ```{r}
