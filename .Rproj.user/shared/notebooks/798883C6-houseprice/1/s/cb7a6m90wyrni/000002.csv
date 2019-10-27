@@ -1,0 +1,6 @@
+"0","skew(all$SalePrice)"
+"1","[1]"
+"1"," 1.877427"
+"1","
+"
+"0","qqnorm(all$SalePrice)"

@@ -1,0 +1,3 @@
+"0","ggplot(data = all[!is.na(all$SalePrice),], aes(x = factor(OverallQual), y = SalePrice))+"
+"0","  geom_boxplot(col = ""darkgreen"") + labs(x = ""Overall Quality"")+"
+"0","  scale_y_continuous(breaks = seq(0, 800000, by = 100000), labels = comma)"

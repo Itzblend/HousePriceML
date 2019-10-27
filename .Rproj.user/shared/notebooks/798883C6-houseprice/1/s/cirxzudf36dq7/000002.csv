@@ -1,0 +1,26 @@
+"0","PreNumerical <- preProcess(numerical_df, method = c(""center"", ""scale""))"
+"0","print(PreNumerical)"
+"1","Created from"
+"1"," "
+"1","1458"
+"1"," "
+"1","samples and"
+"1"," "
+"1","49"
+"1"," "
+"1","variables
+
+"
+"1","Pre-processing:
+"
+"1","  - centered (49)
+"
+"1",""
+"1","  - ignored (0)
+"
+"1",""
+"1","  - scaled (49)
+"
+"1","
+"
+"0","norm_df <- predict(PreNumerical, numerical_df)"

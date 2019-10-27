@@ -1,0 +1,5 @@
+"0","numerical_vars <- names(all[,sapply(all, is.numeric)])"
+"0","factor_vars <- names(all[,sapply(all, is.factor)])"
+"0",""
+"0","numerical_df <- all[,names(all) %in% numerical_vars]"
+"0","factor_df <- all[,names(all) %in% factor_vars]"

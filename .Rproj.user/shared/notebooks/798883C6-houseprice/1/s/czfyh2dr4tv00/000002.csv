@@ -1,0 +1,4 @@
+"0","ggplot(data = all[!is.na(all$SalePrice),], aes(x = GrLivArea, y = SalePrice))+"
+"0","  geom_point(col = ""darkgreen"") + geom_smooth(method = ""lm"", se = FALSE, color = ""black"", aes(group=1))+"
+"0","  scale_y_continuous(breaks = seq(0, 800000, by = 100000), labels = comma)+"
+"0","  geom_text_repel(aes(label = ifelse(all$GrLivArea[!is.na(all$SalePrice)]>4500, rownames(all), """")))"

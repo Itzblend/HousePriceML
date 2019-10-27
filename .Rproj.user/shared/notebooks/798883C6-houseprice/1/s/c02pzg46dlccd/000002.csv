@@ -1,0 +1,6 @@
+"0","combined <- cbind(norm_df, dummy_df)"
+"0","salenames <- ""SalePrice"""
+"0","combined <- combined[,!names(combined) %in% salenames]"
+"0",""
+"0","train1 <- combined[!is.na(all$SalePrice),]"
+"0","test1 <- combined[is.na(all$SalePrice),]"

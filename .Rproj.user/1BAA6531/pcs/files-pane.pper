@@ -1,0 +1,9 @@
+{
+    "path" : "~/Lauri/housepriceml",
+    "sortOrder" : [
+        {
+            "ascending" : true,
+            "columnIndex" : 2
+        }
+    ]
+}

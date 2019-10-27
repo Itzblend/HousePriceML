@@ -1,0 +1,8 @@
+"0","rf1 <- randomForest(x = all[1:1460,-79], y = all$SalePrice[1:1460], ntree = 100, importance = TRUE)"
+"0","rf1_imp <- importance(rf1)"
+"0","imp_df <- data.frame(Variables = row.names(rf1_imp), MSE = rf1_imp[,1])"
+"0","imp_df <- imp_df[order(imp_df$MSE, decreasing = TRUE),]"
+"0",""
+"0","ggplot(data = imp_df[1:20,], aes(x = reorder(Variables, MSE), y = MSE, fill = MSE))+"
+"0","  geom_bar(stat = ""identity"")+ labs(x = ""Variables"", y = ""Mean squared error"")+"
+"0","  coord_flip()"

@@ -1,0 +1,531 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+### In this notebook we are going to predict some house prices while learning machine learning /n techniques
+
+Packages and reading files
+```{r}
+library(knitr)
+library(ggplot2)
+library(plyr)
+library(dplyr)
+library(corrplot)
+library(caret)
+library(gridExtra)
+library(scales)
+library(Rmisc)
+library(ggrepel)
+library(randomForest)
+library(psych)
+library(xgboost)
+library(data.table)
+library(tidyverse)
+```
+```{r}
+train <- read.csv("~/Lauri/housepriceml/train.csv", stringsAsFactors = FALSE)
+test <- read.csv("~/Lauri/housepriceml/test.csv", stringsAsFactors = FALSE)
+```
+
+
+
+Data cleaning
+```{r}
+#Dealing with attributes with a lot of missing values
+test$SalePrice <- NA
+
+#In variable "PoolQC" value NA actually refers to no pool instead of missing value, so we are going to fix that
+train$PoolQC[is.na(train$PoolQC)] <- "None"
+test$PoolQC[is.na(test$PoolQC)] <- "None"
+#Same with MiscFeature
+train$MiscFeature[is.na(train$MiscFeature)] <- "None"
+test$MiscFeature[is.na(test$MiscFeature)] <- "None"
+#And fence
+train$Fence[is.na(train$Fence)] <- "None"
+test$Fence[is.na(test$Fence)] <- "None"
+#And alley
+train$Alley[is.na(train$Alley)] <- "None"
+test$Alley[is.na(test$Alley)] <- "None"
+```
+Data cleaning continued
+```{r}
+table(all$Fireplaces)
+sum(is.na(all$FireplaceQu))
+#The amount of NA's match the amount of houses without fireplaces so we are going to replace NA's with "None" again
+train$FireplaceQu[is.na(train$FireplaceQu)] <- "None"
+test$FireplaceQu[is.na(test$FireplaceQu)] <- "None"
+
+#For the machine learning algorithm we will need as many values to be numerical so we are going to change all the vales that have quality feature
+
+qualities <- c("None" = 0, "Po" = 1, "Fa" = 2, "TA" = 3, "Gd" = 4, "Ex" = 5)
+
+train$FireplaceQu <- as.integer(revalue(train$FireplaceQu, qualities))
+test$FireplaceQu <- as.integer(revalue(test$FireplaceQu, qualities))
+
+#Lot frontage can get tricky as missing values could mean no lot or just simply a missing value. We are going to impute the missing values with median values per area of living
+
+neigh_lot <- ggplot(data = all, aes(x = Neighborhood, y = LotFrontage))+
+  geom_bar(stat = "summary", fun.y = "median", fill = "darkgreen")+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+for(i in 1:nrow(train)){
+  if(is.na(train$LotFrontage[i])){
+    train$LotFrontage[i] <- as.integer(median(train$LotFrontage[train$Neighborhood == train$Neighborhood[i]], na.rm = TRUE))
+  }
+}
+
+for(i in 1:nrow(test)){
+  if(is.na(test$LotFrontage[i])){
+    test$LotFrontage[i] <- as.integer(median(test$LotFrontage[test$Neighborhood == test$Neighborhood[i]], na.rm = TRUE))
+  }
+}
+
+#Heading to garage.
+missattrs[names(missattrs) %like% "Garage"]
+missingabs[names(missattrs) %like% "Garage"]
+#GarageType has same amount of missing values as GarageYrBlt, GarageFinish, GarageQual and GarageCond so we can take that those missing values are due to garage lacking altogether
+
+
+train$GarageYrBlt[is.na(train$GarageYrBlt)] <- train$YearBuilt[is.na(train$GarageYrBlt)]
+test$GarageYrBlt[is.na(test$GarageYrBlt)] <- test$YearBuilt[is.na(test$GarageYrBlt)]
+
+train$GarageFinish[is.na(train$GarageFinish)] <- "None"
+test$GarageFinish[is.na(test$GarageFinish)] <- "None"
+
+train$GarageArea[is.na(train$GarageArea)] <- 0
+test$GarageArea[is.na(test$GarageArea)] <- 0
+
+
+train$GarageQual[is.na(train$GarageQual)] <- "None"
+test$GarageQual[is.na(test$GarageQual)] <- "None"
+
+train$GarageQual <- as.integer(revalue(train$GarageQual, qualities))
+test$GarageQual <- as.integer(revalue(test$GarageQual, qualities))
+
+
+
+train$GarageCond[is.na(train$GarageCond)] <- "None"
+test$GarageCond[is.na(test$GarageCond)] <- "None"
+
+train$GarageType[is.na(train$GarageType)] <- "None"
+test$GarageType[is.na(test$GarageType)] <- "None"
+
+train$BsmtExposure[is.na(train$BsmtExposure)] <- "None"
+test$BsmtExposure[is.na(test$BsmtExposure)] <- "None"
+
+train$BsmtFinType2[is.na(train$BsmtFinType2)] <- "None"
+test$BsmtFinType2[is.na(test$BsmtFinType2)] <- "None"
+
+train$BsmtFinType1[is.na(train$BsmtFinType1)] <- "None"
+test$BsmtFinType1[is.na(test$BsmtFinType1)] <- "None"
+
+train$BsmtQual[is.na(train$BsmtQual)] <- "None"
+test$BsmtQual[is.na(test$BsmtQual)] <- "None"
+
+train$BsmtCond[is.na(train$BsmtCond)] <- "None"
+test$BsmtCond[is.na(test$BsmtCond)] <- "None"
+
+train$MasVnrType[is.na(train$MasVnrType)] <- "None"
+test$MasVnrType[is.na(test$MasVnrType)] <- "None"
+
+train$MasVnrArea[is.na(train$MasVnrArea)] <- 0
+test$MasVnrArea[is.na(test$MasVnrArea)] <- 0
+
+train$Electrical[is.na(train$Electrical)] <- names(sort(-table(train$Electrical)))[1]
+test$Electrical[is.na(test$Electrical)] <- names(sort(-table(test$Electrical)))[1]
+
+train$Electrical <- as.factor(train$Electrical)
+test$Electrical <- as.factor(test$Electrical)
+
+train$MSZoning[is.na(train$MSZoning)] <- names(sort(-table(train$MSZoning)))[1]
+test$MSZoning[is.na(test$MSZoning)] <- names(sort(-table(test$MSZoning)))[1]
+
+table(test$Utilities)
+#Removing the missing values on utilities would make the dataset 100% full of one type of value, so we are going to get rid of it completely
+
+train$Utilities <- NULL
+test$Utilities <- NULL
+
+train$Functional[is.na(train$Functional)] <- names(sort(-table(train$Functional)))[1]
+test$Functional[is.na(test$Functional)] <- names(sort(-table(test$Functional)))[1]
+
+train$Functional <- as.integer(revalue(train$Functional, c("Sal" = 0, "Sev" = 1, "Maj2" = 2, "Maj1" = 3, "Mod" = 4, "Min2" = 5, "Min1" = 6, "Typ" = 7 )))
+test$Functional <- as.integer(revalue(test$Functional, c("Sal" = 0, "Sev" = 1, "Maj2" = 2, "Maj1" = 3, "Mod" = 4, "Min2" = 5, "Min1" = 6, "Typ" = 7 )))
+
+train$BsmtFullBath[is.na(train$BsmtFullBath)] <- 0 
+test$BsmtFullBath[is.na(test$BsmtFullBath)] <- 0
+
+train$BsmtHalfBath[is.na(train$BsmtHalfBath)] <- 0 
+test$BsmtHalfBath[is.na(test$BsmtHalfBath)] <- 0
+
+train$Exterior1st[is.na(train$Exterior1st)] <- names(sort(-table(train$Exterior1st)))[1]
+test$Exterior1st[is.na(test$Exterior1st)] <- names(sort(-table(test$Exterior1st)))[1]
+
+train$Exterior2nd[is.na(train$Exterior2nd)] <- names(sort(-table(train$Exterior2nd)))[1]
+test$Exterior2nd[is.na(test$Exterior2nd)] <- names(sort(-table(test$Exterior2nd)))[1]
+
+train$BsmtFinSF1[is.na(train$BsmtFinSF1)] <- 0
+test$BsmtFinSF1[is.na(test$BsmtFinSF1)] <- 0
+
+train$BsmtFinSF2[is.na(train$BsmtFinSF2)] <- 0
+test$BsmtFinSF2[is.na(test$BsmtFinSF2)] <- 0
+
+train$BsmtUnfSF[is.na(train$BsmtUnfSF)] <- 0
+test$BsmtUnfSF[is.na(test$BsmtUnfSF)] <- 0
+
+train$TotalBsmtSF[is.na(train$TotalBsmtSF)] <- 0
+test$TotalBsmtSF[is.na(test$TotalBsmtSF)] <- 0
+
+train$KitchenQual[is.na(train$KitchenQual)] <- names(sort(-table(train$KitchenQual)))[1]
+test$KitchenQual[is.na(test$KitchenQual)] <- names(sort(-table(test$KitchenQual)))[1]
+
+train$GarageCars[is.na(train$GarageCars)] <- 0
+test$GarageCars[is.na(test$GarageCars)] <- 0
+
+train$SaleType[is.na(train$SaleType)] <- names(sort(-table(train$SaleType)))[1]
+test$SaleType[is.na(test$SaleType)] <- names(sort(-table(test$SaleType)))[1]
+
+train$ExterQual <- as.integer(revalue(train$ExterQual, qualities))
+test$ExterQual <- as.integer(revalue(test$ExterQual, qualities))
+
+train$BsmtQual <- as.integer(revalue(train$BsmtQual, qualities))
+test$BsmtQual <- as.integer(revalue(test$BsmtQual, qualities))
+
+train$HeatingQC <- as.integer(revalue(train$HeatingQC, qualities))
+test$HeatingQC <- as.integer(revalue(test$HeatingQC, qualities))
+
+train$KitchenQual <- as.integer(revalue(train$KitchenQual, qualities))
+test$KitchenQual <- as.integer(revalue(test$KitchenQual, qualities))
+
+train$PoolQC <- as.integer(revalue(train$PoolQC, qualities))
+test$PoolQC <- as.integer(revalue(test$PoolQC, qualities))
+
+colnames(train[,colnames(train) %like% "Q"])
+
+table(train$PoolQC)
+
+```
+
+Binding and missing value checks
+```{r}
+#Binding and missing value checks
+all <- rbind(train,test)
+
+missingabs <- sapply(train, function(x) sum(x == "" | is.na(x)))
+missattrs <- sapply(train, function(x) sum(x == "" | is.na(x)))/nrow(train)
+missattrs[missattrs > 0.6]
+
+missattrs[order(-missattrs)]
+
+missattrs <- sapply(test, function(x) sum(x == "" | is.na(x)))/nrow(test)
+
+missall <- sapply(all, function(x) sum(x == "" | is.na(x)))/nrow(all)
+missall[order(-missall)]
+
+#test[,names(missattrs[missattrs > 0.6])] <- NULL
+#train[,names(missattrs[missattrs > 0.6])] <- NULL
+all <- rbind(train,test)
+all_labels <- all$Id
+all$Id <- NULL
+```
+Labeling:
+characters
+```{r}
+char_columns <-names(all[,sapply(all, is.character)])
+char_columns
+
+table(all$MSZoning)
+all$MSZoning <- as.factor(all$MSZoning)
+
+table(all$Street)
+all$Street <- as.factor(all$Street)
+
+table(all$Alley)
+all$Alley <- as.factor(all$Alley)
+
+table(all$LotShape)
+all$LotShape <- as.factor(all$LotShape)
+
+table(all$LandContour)
+all$LandContour <- as.factor(all$LandContour)
+
+table(all$LotConfig)
+all$LotConfig <- as.factor(all$LotConfig)
+
+table(all$LandSlope)
+all$LandSlope <- as.integer(revalue(all$LandSlope, c("Gtl" = 0, "Mod" = 1, "Sev" = 2)))
+
+table(all$Neighborhood)
+all$Neighborhood <- as.factor(all$Neighborhood)
+
+table(all$Condition1)
+all$Condition1 <- as.factor(all$Condition1)
+
+table(all$Condition2)
+all$Condition2 <- as.factor(all$Condition2)
+
+table(all$BldgType)
+all$BldgType <- as.factor(all$BldgType)
+
+table(all$HouseStyle)
+all$HouseStyle <- as.factor(all$HouseStyle)
+
+table(all$RoofStyle)
+all$RoofStyle <- as.factor(all$RoofStyle)
+
+table(all$RoofMatl)
+all$RoofMatl <- as.factor(all$RoofMatl)
+
+table(all$Exterior1st)
+all$Exterior1st <- as.factor(all$Exterior1st)
+
+table(all$Exterior2nd)
+all$Exterior2nd <- as.factor(all$Exterior2nd)
+
+table(all$MasVnrType)
+all$MasVnrType <- as.factor(all$MasVnrType)
+
+table(all$ExterCond)
+all$ExterCond <- as.integer(revalue(all$ExterCond, qualities))
+
+table(all$Foundation)
+all$Foundation <- as.factor(all$Foundation)
+
+table(all$BsmtCond)
+all$BsmtCond <- as.integer(revalue(all$BsmtCond, qualities))
+
+table(all$BsmtExposure)
+exposure <- c("None" = 0, "No" = 1, "Mn" = 2, "Av" = 3, "Gd" = 4)
+all$BsmtExposure <- as.integer(revalue(all$BsmtExposure, exposure))
+
+table(all$BsmtFinType1)
+fin_rating <- c("None" = 0, "Unf" = 1, "LwQ" = 2, "Rec" = 3, "BLQ" = 4, "ALQ" = 5, "GLQ" = 6)
+all$BsmtFinType1 <- as.integer(revalue(all$BsmtFinType1, fin_rating))
+
+table(all$BsmtFinType2)
+all$BsmtFinType2 <- as.integer(revalue(all$BsmtFinType2, fin_rating))
+
+table(all$Heating)
+all$Heating <- as.factor(all$Heating)
+
+table(all$CentralAir)
+all$CentralAir <- as.integer(revalue(all$CentralAir, c("N" = 0, "Y" = 1)))
+
+table(all$GarageType)
+all$GarageType <- as.factor(all$GarageType)
+
+table(all$GarageFinish)
+finished_values <- c("None" = 0, "Unf" = 1, "RFn" = 2, "Fin" = 3)
+all$GarageFinish <- as.integer(revalue(all$GarageFinish, finished_values))
+
+table(all$GarageCond)
+all$GarageCond <- as.integer(revalue(all$GarageCond, qualities))
+
+table(all$PavedDrive)
+all$PavedDrive <- as.integer(revalue(all$PavedDrive, c("N" = 0, "P" = 1, "Y" = 2)))
+
+table(all$Fence)
+all$Fence <- as.integer(revalue(all$Fence, c("None" = 0, "MnWw" = 1, "GdWo" = 2, "MnPrv" = 3, "GdPrv" = 4)))
+
+table(all$MiscFeature)
+all$MiscFeature <- as.factor(all$MiscFeature)
+
+table(all$SaleType)
+all$SaleType <- as.factor(all$SaleType)
+
+table(all$SaleCondition)
+all$SaleCondition <- as.factor(all$SaleCondition)
+```
+integers
+```{r}
+int_columns <- names(all[,sapply(all, is.integer)])
+length(int_columns)
+int_columns
+
+int_temp <- all[,int_columns]
+
+all$MSSubClass <- as.factor(all$MSSubClass)
+all$MSSubClass<-revalue(all$MSSubClass, c('20'='1 story 1946+', '30'='1 story 1945-', '40'='1 story unf attic', '45'='1,5 story unf', '50'='1,5 story fin', '60'='2 story 1946+', '70'='2 story 1945-', '75'='2,5 story all ages', '80'='split/multi level', '85'='split foyer', '90'='duplex all style/age', '120'='1 story PUD 1946+', '150'='1,5 story PUD all', '160'='2 story PUD 1946+', '180'='PUD multilevel', '190'='2 family conversion'))
+all$MoSold <- as.factor(all$MoSold)
+all$YrSold <- as.factor(all$YrSold)
+```
+factors and leftover checking
+```{r}
+fact_columns <- names(all[,sapply(all, is.factor)])
+fact_columns
+fact_temp <- all[,fact_columns]
+
+rest_cols <- names(all[,-which(names(all) %in% c(char_columns, int_columns, fact_columns))])
+rest_cols
+rest_temp <- all[,rest_cols]
+
+
+length(rest_cols)
+rest_cols
+class(all$MasVnrArea)
+
+length(names(all[,sapply(all, is.numeric)]))
+```
+missing value checks
+```{r}
+#Dealing with rows with a lot of missing values
+missing <- apply(all, 1, function(x) sum(x == "" | is.na(x)))/ncol(all)
+head(missing[order(-missing)])
+#Highest amount of absence in our data is only about 16% a row so we are going to leave them as they are
+```
+
+Finding out the correlations between numerical attributes
+```{r}
+numericattrs <- which(sapply(all, is.numeric))
+numericattrsnames <- names(numericattrs)
+numericattrsnames
+```
+```{r}
+numattrs <- all[,numericattrs]
+cor_numattrs <- cor(numattrs, use="pairwise.complete.obs")#Correlation as a matrix
+
+cor_sorted <- as.matrix(sort(cor_numattrs[,"SalePrice"], decreasing = TRUE))
+
+high_cor <- names(which(apply(cor_sorted, 1, function(x) abs(x) > 0.5)))
+cor_numattrs <- cor_numattrs[high_cor,high_cor]
+
+corrplot.mixed(cor_numattrs, tl.col = "black", tl.pos = "lt")
+```
+The highest correlations to saleprice are Overall quality and Living space above ground. We will dig deeper into these
+```{r}
+ggplot(data = all[!is.na(all$SalePrice),], aes(x = factor(OverallQual), y = SalePrice))+
+  geom_boxplot(col = "darkgreen") + labs(x = "Overall Quality")+
+  scale_y_continuous(breaks = seq(0, 800000, by = 100000), labels = comma)
+```
+plotting
+```{r}
+ggplot(data = all[!is.na(all$SalePrice),], aes(x = GrLivArea, y = SalePrice))+
+  geom_point(col = "darkgreen") + geom_smooth(method = "lm", se = FALSE, color = "black", aes(group=1))+
+  scale_y_continuous(breaks = seq(0, 800000, by = 100000), labels = comma)+
+  geom_text_repel(aes(label = ifelse(all$GrLivArea[!is.na(all$SalePrice)]>4500, rownames(all), "")))
+```
+OUTLIERS
+```{r}
+all[c(524, 1299),c("SalePrice", "OverallQual", "GrLivArea")] #Outliers in our data so far
+```
+variable importance
+```{r}
+rf1 <- randomForest(x = all[1:1460,-79], y = all$SalePrice[1:1460], ntree = 100, importance = TRUE)
+rf1_imp <- importance(rf1)
+imp_df <- data.frame(Variables = row.names(rf1_imp), MSE = rf1_imp[,1])
+imp_df <- imp_df[order(imp_df$MSE, decreasing = TRUE),]
+
+ggplot(data = imp_df[1:20,], aes(x = reorder(Variables, MSE), y = MSE, fill = MSE))+
+  geom_bar(stat = "identity")+ labs(x = "Variables", y = "Mean squared error")+
+  coord_flip()
+```
+Data preparation for modeling
+
+Removing variables that have misleading correlation: GarageArea, TotalBsmtSF, GarageYrBlt, TotRmsAbvGrd
+```{r}
+corrplot.mixed(cor_numattrs, tl.col = "black", tl.pos = "lt")
+
+vardelete <- c("GarageArea", "TotalBsmtSF", "GarageYrBlt", "TotRmsAbvGrd")
+
+all <- all[,!(names(all) %in% vardelete)]
+
+#Removing obvious outliers found earlier
+all <- all[-c(524, 1299),]
+```
+
+```{r}
+numerical_vars <- names(all[,sapply(all, is.numeric)])
+factor_vars <- names(all[,sapply(all, is.factor)])
+
+numerical_df <- all[,names(all) %in% numerical_vars]
+factor_df <- all[,names(all) %in% factor_vars]
+```
+Fixing the skewness in data
+```{r}
+for(i in ncol(numerical_df)){
+  if (abs(skew(numerical_df[,i])) > 0.8) {
+    numerical_df[,i] <- log(numerical_df[,i] +1)
+  }
+}
+```
+Normalising the data
+```{r}
+PreNumerical <- preProcess(numerical_df, method = c("center", "scale"))
+print(PreNumerical)
+
+norm_df <- predict(PreNumerical, numerical_df)
+```
+Dummying up the factor variables
+```{r}
+dummy_df <- as.data.frame(model.matrix(~.-1, factor_df))
+```
+Removing some columns with little or no information
+```{r}
+ZeroColTest <- which(colSums(dummy_df[(nrow(all[!is.na(all$SalePrice),])+1):nrow(all),])== 0)
+
+ZeroColTrain <- which(colSums(dummy_df[1:nrow(all[!is.na(all$SalePrice),]),])==0)
+
+fewOnes <- which(colSums(dummy_df[1:nrow(all[!is.na(all$SalePrice),]),])<10)
+
+dummy_df <- dummy_df[,-ZeroColTest]
+dummy_df <- dummy_df[,-ZeroColTrain]
+dummy_df <- dummy_df[,-fewOnes]
+```
+skewness of predicted value (SalePrice)
+```{r}
+skew(all$SalePrice)
+
+qqnorm(all$SalePrice)
+qqline(all$SalePrice)
+
+all$SalePrice <- log(all$SalePrice)
+
+skew(all$SalePrice)
+
+qqnorm(all$SalePrice)
+qqline(all$SalePrice)
+```
+Combining and splitting the dataset
+```{r}
+combined <- cbind(norm_df, dummy_df)
+salenames <- "SalePrice"
+combined <- combined[,!names(combined) %in% salenames]
+
+train1 <- combined[!is.na(all$SalePrice),]
+test1 <- combined[is.na(all$SalePrice),]
+```
+Lasso time (model building)
+```{r}
+set.seed(205)
+
+myControl <- trainControl(method = "cv", number = 10)
+lassoGrid <- expand.grid(alpha = 1, lambda = seq(0.001, 0.1, by = 0.0005))
+
+lassoMod <- train(x = train1, y = all$SalePrice[!is.na(all$SalePrice)], method = "glmnet", trControl = myControl, tuneGrid = lassoGrid)
+
+min(lassoMod$results$RMSE)
+```
+Importances
+```{r}
+lassoVarImp <- varImp(lassoMod, scale = F)
+lassoImportance <- lassoVarImp$importance
+
+varselected <- length(which(lassoImportance$Overall != 0))
+varnotselected <- length(which(lassoImportance$Overall == 0))
+
+varselected
+varnotselected
+```
+Predictions
+```{r}
+lassoPred <- predict(lassoMod, test1)
+predictions_test1 <- exp(lassoPred)
+head(predictions_test1)
+```
+```{r}
+test$SalePrice <- predictions_test1
+
+final_df <- rbind(train,test)
+```
+### Calculating the prices with accuracy of 88.45%

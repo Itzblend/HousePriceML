@@ -1,0 +1,26 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1572102139341.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "6E8FEFAD",
+    "lastKnownWriteTime" : 729618750976976237,
+    "last_content_update" : 1572102139341,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "id" : "506eeb3a42144d52923a2210c11c6767",
+        "name" : "lassoMod",
+        "title" : "lassoMod"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 3,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "object_explorer"
+}

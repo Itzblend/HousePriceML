@@ -1,0 +1,7 @@
+"0",""
+"0","vardelete <- c(""GarageArea"", ""TotalBsmtSF"", ""GarageYrBlt"", ""TotRmsAbvGrd"")"
+"0",""
+"0","all <- all[,!(names(all) %in% vardelete)]"
+"0",""
+"0","#Removing obvious outliers found earlier"
+"0","all <- all[-c(524, 1299),]"
